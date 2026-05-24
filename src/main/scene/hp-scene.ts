@@ -1,4 +1,4 @@
-import type { Combatant } from "@shared";
+import type { Combatant } from "../../shared";
 import {
   drawText,
   drawTextCentered,

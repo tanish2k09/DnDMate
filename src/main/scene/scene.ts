@@ -1,4 +1,4 @@
-import type { GameState, SceneId } from "@shared";
+import type { GameState, SceneId } from "../../shared";
 import type { Framebuffer } from "../render";
 
 /** Everything a scene needs to render one frame. */

@@ -1,4 +1,4 @@
-import type { DeviceModel } from "@shared";
+import type { DeviceModel } from "../../shared";
 
 /**
  * Geometric profile of a Divoom device — width and height only. This is what

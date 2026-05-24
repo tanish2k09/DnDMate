@@ -4,20 +4,21 @@ import react from "@vitejs/plugin-react";
 import { defineConfig, externalizeDepsPlugin } from "electron-vite";
 
 const root = dirname(fileURLToPath(import.meta.url));
-const sharedAlias = { "@shared": resolve(root, "src/shared") };
+
+// Note: shared types live at src/shared/. We import them with relative paths
+// from main/preload/renderer because electron-vite's SSR resolver doesn't
+// honor `resolve.alias` for bare specifiers in the main/preload bundles. The
+// `@shared` alias still exists in tsconfig + vitest for testing convenience.
 
 export default defineConfig({
   main: {
     plugins: [externalizeDepsPlugin()],
-    resolve: { alias: sharedAlias },
   },
   preload: {
     plugins: [externalizeDepsPlugin()],
-    resolve: { alias: sharedAlias },
   },
   renderer: {
     root: resolve(root, "src/renderer"),
-    resolve: { alias: sharedAlias },
     plugins: [react()],
     build: {
       rollupOptions: {

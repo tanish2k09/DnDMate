@@ -1,5 +1,5 @@
-import type { GameState, SceneId } from "@shared";
 import { describe, expect, test } from "vitest";
+import type { GameState, SceneId } from "../../shared";
 import type { Framebuffer } from "../render";
 import { getScene, renderScene } from "./registry";
 import type { SceneContext } from "./scene";

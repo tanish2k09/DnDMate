@@ -1,4 +1,4 @@
-import type { DeviceSettings } from "@shared";
+import type { DeviceSettings } from "../../shared";
 import type { GameStore } from "../domain/game-store";
 import type { Framebuffer } from "../render";
 import { renderScene } from "../scene";

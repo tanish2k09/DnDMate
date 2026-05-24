@@ -1,4 +1,4 @@
-import type { SceneId } from "@shared";
+import type { SceneId } from "../../shared";
 import type { Framebuffer } from "../render";
 import { blankScene } from "./blank-scene";
 import { hourglassScene } from "./hourglass-scene";

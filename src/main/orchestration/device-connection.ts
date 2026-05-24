@@ -1,4 +1,4 @@
-import type { DeviceSettings } from "@shared";
+import type { DeviceSettings } from "../../shared";
 import type { Framebuffer } from "../render";
 import type { DeviceSink } from "./live-controller";
 

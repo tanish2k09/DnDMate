@@ -1,4 +1,4 @@
-import type { Combatant, CombatantGroup, DeviceSettings, GameState, SceneId } from "@shared";
+import type { Combatant, CombatantGroup, DeviceSettings, GameState, SceneId } from "../../shared";
 import { clampHp, createCombatant } from "./combatant";
 import { CountdownTimer } from "./countdown-timer";
 import type { PersistedState, StatePersister } from "./state-repository";

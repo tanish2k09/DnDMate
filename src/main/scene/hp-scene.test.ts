@@ -1,5 +1,5 @@
-import type { Combatant, GameState } from "@shared";
 import { describe, expect, test } from "vitest";
+import type { Combatant, GameState } from "../../shared";
 import type { Framebuffer } from "../render";
 import { partyHpScene } from "./hp-scene";
 import type { SceneContext } from "./scene";

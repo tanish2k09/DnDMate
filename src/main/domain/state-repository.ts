@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import { type Combatant, type DeviceSettings, isSceneId, type SceneId } from "@shared";
+import { type Combatant, type DeviceSettings, isSceneId, type SceneId } from "../../shared";
 import { readJson, writeJson } from "./json-store";
 
 /** The portion of game state that survives a server restart. */

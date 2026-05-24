@@ -1,5 +1,5 @@
-import type { DeviceSettings } from "@shared";
 import { describe, expect, test } from "vitest";
+import type { DeviceSettings } from "../../shared";
 import { GameStore } from "../domain/game-store";
 import { defaultState, type StatePersister } from "../domain/state-repository";
 import type { Framebuffer } from "../render";

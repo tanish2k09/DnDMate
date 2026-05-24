@@ -1,5 +1,5 @@
-import type { GameState } from "@shared";
 import { describe, expect, test } from "vitest";
+import type { GameState } from "../../shared";
 import { colorsEqual, type Framebuffer } from "../render";
 import { hourglassScene } from "./hourglass-scene";
 import { SAND, SAND_LOW } from "./palette";
