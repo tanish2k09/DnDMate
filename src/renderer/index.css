@@ -173,7 +173,7 @@ h2 {
   white-space: nowrap;
 }
 
-.status-open {
+.status-connected {
   color: var(--ok);
   border-color: color-mix(in srgb, var(--ok) 50%, transparent);
 }
@@ -183,9 +183,68 @@ h2 {
   border-color: color-mix(in srgb, var(--warn) 50%, transparent);
 }
 
-.status-closed {
+.status-disconnected {
+  color: var(--muted);
+}
+
+.status-unavailable {
   color: var(--accent);
   border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+}
+
+/* ---- Device scan list ----------------------------------------------- */
+
+.device-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.device-list-item {
+  width: 100%;
+  text-align: left;
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+  font: inherit;
+}
+
+.device-list-item:hover {
+  background: var(--card-hover);
+}
+
+.device-list-item-recommended {
+  border-color: color-mix(in srgb, var(--ok) 50%, transparent);
+}
+
+.device-name {
+  flex: 1 1 auto;
+  font-weight: 600;
+}
+
+.device-address {
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.78rem;
+}
+
+.device-badge {
+  background: color-mix(in srgb, var(--ok) 20%, transparent);
+  color: var(--ok);
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
 }
 
 /* ---- Roster --------------------------------------------------------- */
