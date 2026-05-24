@@ -1,11 +1,13 @@
 import { contextBridge, ipcRenderer } from "electron";
 import {
   type AddCombatantInput,
+  type BtStatusMessage,
   type DeviceSettingsPatch,
   type DndmateApi,
   type GameState,
   IpcChannel,
   type PreviewMessage,
+  type ScannedDevice,
   type SceneId,
   type Snapshot,
   type TimerCommand,
@@ -28,6 +30,8 @@ const api: DndmateApi = {
   snapshot: () => ipcRenderer.invoke(IpcChannel.Snapshot) as Promise<Snapshot>,
   onState: (listener) => subscribe<GameState>(IpcChannel.PushState, listener),
   onPreview: (listener) => subscribe<PreviewMessage>(IpcChannel.PushPreview, listener),
+  onBtStatus: (listener) => subscribe<BtStatusMessage>(IpcChannel.PushBtStatus, listener),
+  scanDevices: () => ipcRenderer.invoke(IpcChannel.ScanDevices) as Promise<ScannedDevice[]>,
   actions: {
     addCombatant: (input: AddCombatantInput) =>
       ipcRenderer.invoke(IpcChannel.AddCombatant, input) as Promise<void>,

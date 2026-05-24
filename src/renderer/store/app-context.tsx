@@ -1,5 +1,5 @@
 import { createContext, type ReactNode, useContext } from "react";
-import type { GameState, PreviewMessage } from "../../shared";
+import type { BtStatusMessage, GameState, PreviewMessage } from "../../shared";
 import {
   type ConnectionStatus,
   type IpcClient,
@@ -11,12 +11,13 @@ interface AppContextValue {
   status: ConnectionStatus;
   preview: PreviewMessage | null;
   state: GameState | null;
+  bt: BtStatusMessage;
   actions: IpcClient;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
 
-/** Provides the live IPC connection (status, preview, state) and action client. */
+/** Provides the live IPC connection (status, preview, state, BT) and action client. */
 export function AppProvider({ children }: { children: ReactNode }) {
   const connection = usePixooConnection();
   const value: AppContextValue = { ...connection, actions: ipcClient };

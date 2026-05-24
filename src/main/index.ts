@@ -22,11 +22,17 @@ async function bootstrap(): Promise<AppContext> {
   const initial = await repository.load();
   const store = new GameStore(initial, repository);
 
-  // Build the bridge first so the controller's first render lands in the
-  // preview buffer even before any window attaches.
-  const bridge = new IpcBridge({ store });
+  const transport = await createBtTransport();
+  const device = new PixooBtClient(transport);
+  // If the factory had to fall back to mock on a non-darwin platform or
+  // because the native module failed to load, surface that to the UI so the
+  // user knows the BT path is dead.
+  if (process.env.DNDMATE_FORCE_MOCK_BT !== "1" && process.platform !== "darwin") {
+    device.markUnavailable("Bluetooth is only supported on macOS in this build");
+  }
 
-  const device = new PixooBtClient(createBtTransport());
+  const bridge = new IpcBridge({ store, device });
+
   const controller = new LiveController({
     store,
     device,

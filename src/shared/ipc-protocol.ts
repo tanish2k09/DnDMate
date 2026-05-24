@@ -48,6 +48,26 @@ export interface AddCombatantInput {
   maxHp: number;
 }
 
+/** Bluetooth connection lifecycle, surfaced to the renderer status badge. */
+export type BtConnectionStatus = "disconnected" | "connecting" | "connected" | "unavailable";
+
+export interface BtStatusMessage {
+  readonly type: "bt-status";
+  readonly status: BtConnectionStatus;
+  /** Address currently bound (or last attempted), if any. */
+  readonly address: string | null;
+  /** Human-readable failure detail when status is "disconnected" after an error. */
+  readonly error: string | null;
+}
+
+/** One paired Bluetooth device returned by the scanner. */
+export interface ScannedDevice {
+  readonly address: string;
+  readonly name: string;
+  /** Heuristic: true when the name pattern-matches a known Divoom product. */
+  readonly isPixooLike: boolean;
+}
+
 /**
  * The initial snapshot returned to the renderer on connect — saves a round-trip
  * waiting for the first state/preview push.
@@ -55,6 +75,7 @@ export interface AddCombatantInput {
 export interface Snapshot {
   state: GameState;
   preview: PreviewMessage | null;
+  bt: BtStatusMessage;
 }
 
 /** IPC channel names, namespaced by direction + intent. */
@@ -62,8 +83,10 @@ export const IpcChannel = {
   // Main → renderer events.
   PushState: "dndmate:push:state",
   PushPreview: "dndmate:push:preview",
+  PushBtStatus: "dndmate:push:bt-status",
   // Renderer → main invocations.
   Snapshot: "dndmate:get:snapshot",
+  ScanDevices: "dndmate:get:scan-devices",
   AddCombatant: "dndmate:act:add-combatant",
   AdjustHp: "dndmate:act:adjust-hp",
   RemoveCombatant: "dndmate:act:remove-combatant",
@@ -84,6 +107,10 @@ export interface DndmateApi {
   onState(listener: (state: GameState) => void): () => void;
   /** Subscribe to preview frames; returns an unsubscribe fn. */
   onPreview(listener: (preview: PreviewMessage) => void): () => void;
+  /** Subscribe to BT connection status changes; returns an unsubscribe fn. */
+  onBtStatus(listener: (status: BtStatusMessage) => void): () => void;
+  /** List devices the OS has already paired with this host. */
+  scanDevices(): Promise<ScannedDevice[]>;
   /** Action surface — the v1 REST API, transported over IPC. */
   readonly actions: {
     addCombatant(input: AddCombatantInput): Promise<void>;

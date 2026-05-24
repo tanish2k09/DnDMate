@@ -1,17 +1,33 @@
 import { useEffect, useState } from "react";
-import type { DndmateApi, GameState, PreviewMessage, SceneId, TimerCommand } from "../../shared";
+import type {
+  BtStatusMessage,
+  DndmateApi,
+  GameState,
+  PreviewMessage,
+  ScannedDevice,
+  SceneId,
+  TimerCommand,
+} from "../../shared";
 
 export type ConnectionStatus = "connecting" | "open" | "closed";
+
+const DISCONNECTED_BT: BtStatusMessage = {
+  type: "bt-status",
+  status: "disconnected",
+  address: null,
+  error: null,
+};
 
 export interface IpcConnection {
   status: ConnectionStatus;
   preview: PreviewMessage | null;
   state: GameState | null;
+  bt: BtStatusMessage;
 }
 
 /**
- * Subscribe to state + preview pushes from main, seeded by a snapshot so the
- * first render has data without waiting for a mutation to broadcast.
+ * Subscribe to state, preview, and BT-status pushes from main, seeded by a
+ * snapshot so the first render has data without waiting for a broadcast.
  *
  * If `window.dndmate` is missing (e.g., the preload script failed to load),
  * the hook stays in `connecting` indefinitely — main is the source of truth,
@@ -21,6 +37,7 @@ export function usePixooConnection(): IpcConnection {
   const [status, setStatus] = useState<ConnectionStatus>("connecting");
   const [preview, setPreview] = useState<PreviewMessage | null>(null);
   const [state, setState] = useState<GameState | null>(null);
+  const [bt, setBt] = useState<BtStatusMessage>(DISCONNECTED_BT);
 
   useEffect(() => {
     const api = window.dndmate;
@@ -33,11 +50,13 @@ export function usePixooConnection(): IpcConnection {
       if (disposed) return;
       setState(snapshot.state);
       setPreview(snapshot.preview);
+      setBt(snapshot.bt);
       setStatus("open");
     });
 
     unsubscribers.push(api.onState((next) => setState(next)));
     unsubscribers.push(api.onPreview((next) => setPreview(next)));
+    unsubscribers.push(api.onBtStatus((next) => setBt(next)));
 
     return () => {
       disposed = true;
@@ -46,7 +65,7 @@ export function usePixooConnection(): IpcConnection {
     };
   }, []);
 
-  return { status, preview, state };
+  return { status, preview, state, bt };
 }
 
 /** A typed client over the IPC action surface. Drop-in for the v1 restClient. */
@@ -61,6 +80,7 @@ export interface IpcClient {
   resumeTimer(): Promise<void>;
   resetTimer(): Promise<void>;
   addTimerSeconds(delta: number): Promise<void>;
+  scanDevices(): Promise<ScannedDevice[]>;
 }
 
 /** Adapt the preload API into the per-action shape the UI components expect. */
@@ -77,6 +97,7 @@ export function createIpcClient(api: DndmateApi): IpcClient {
     resumeTimer: () => timer({ action: "resume" }),
     resetTimer: () => timer({ action: "reset" }),
     addTimerSeconds: (delta) => timer({ action: "add", delta }),
+    scanDevices: () => api.scanDevices(),
   };
 }
 
@@ -97,6 +118,10 @@ function noopClient(): IpcClient {
     resumeTimer: async () => warn(),
     resetTimer: async () => warn(),
     addTimerSeconds: async () => warn(),
+    scanDevices: async () => {
+      warn();
+      return [];
+    },
   };
 }
 

@@ -1,6 +1,7 @@
 import { type BrowserWindow, ipcMain } from "electron";
 import {
   type AddCombatantInput,
+  type BtStatusMessage,
   type DeviceSettingsPatch,
   IpcChannel,
   type PreviewMessage,
@@ -8,31 +9,39 @@ import {
   type Snapshot,
   type TimerCommand,
 } from "../shared";
+import { listPairedPixooDevices } from "./bluetooth/device-scanner";
+import type { PixooBtClient } from "./bluetooth/pixoo-bt-client";
 import type { GameStore } from "./domain/game-store";
 import type { Framebuffer } from "./render/framebuffer";
 import { encodeFrame } from "./render/rgb-encoder";
 
 export interface IpcBridgeDeps {
   store: GameStore;
+  device: PixooBtClient;
 }
 
 /**
- * Wires renderer-side IPC calls to the GameStore and broadcasts state +
- * preview frames back to every open BrowserWindow.
+ * Wires renderer-side IPC calls to the GameStore + PixooBtClient, and
+ * broadcasts state, preview frames, and BT status to every open
+ * BrowserWindow.
  *
  * Lifecycle: construct → {@link attachWindow} once a window opens → call
  * {@link dispose} on app shutdown to unregister handlers and unsubscribe.
  */
 export class IpcBridge {
   private readonly store: GameStore;
+  private readonly device: PixooBtClient;
   private readonly windows = new Set<BrowserWindow>();
   private latestPreview: PreviewMessage | null = null;
   private storeUnsubscribe: (() => void) | null = null;
+  private deviceUnsubscribe: (() => void) | null = null;
 
   constructor(deps: IpcBridgeDeps) {
     this.store = deps.store;
+    this.device = deps.device;
     this.registerHandlers();
     this.storeUnsubscribe = this.store.onChange(() => this.pushState());
+    this.deviceUnsubscribe = this.device.onStatusChange((status) => this.pushBtStatus(status));
   }
 
   /** Register a renderer window to receive state + preview pushes. */
@@ -57,6 +66,8 @@ export class IpcBridge {
   dispose(): void {
     this.storeUnsubscribe?.();
     this.storeUnsubscribe = null;
+    this.deviceUnsubscribe?.();
+    this.deviceUnsubscribe = null;
     for (const channel of Object.values(IpcChannel)) {
       ipcMain.removeHandler(channel);
     }
@@ -67,6 +78,8 @@ export class IpcBridge {
 
   private registerHandlers(): void {
     ipcMain.handle(IpcChannel.Snapshot, (): Snapshot => this.snapshot());
+
+    ipcMain.handle(IpcChannel.ScanDevices, () => listPairedPixooDevices());
 
     ipcMain.handle(IpcChannel.AddCombatant, (_event, input: AddCombatantInput) => {
       this.store.addCombatant(input.group, input.name, input.maxHp);
@@ -114,11 +127,19 @@ export class IpcBridge {
   }
 
   private snapshot(): Snapshot {
-    return { state: this.store.toState(), preview: this.latestPreview };
+    return {
+      state: this.store.toState(),
+      preview: this.latestPreview,
+      bt: this.device.currentStatus,
+    };
   }
 
   private pushState(): void {
     this.broadcast(IpcChannel.PushState, this.store.toState());
+  }
+
+  private pushBtStatus(status: BtStatusMessage): void {
+    this.broadcast(IpcChannel.PushBtStatus, status);
   }
 
   private broadcast(channel: string, payload: unknown): void {
