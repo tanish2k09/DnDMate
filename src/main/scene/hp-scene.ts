@@ -1,4 +1,4 @@
-import type { Combatant } from "@dndmate/shared";
+import type { Combatant } from "@shared";
 import {
   drawText,
   drawTextCentered,

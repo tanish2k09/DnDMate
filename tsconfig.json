@@ -5,6 +5,7 @@
     "types": ["node", "vite/client"],
     "jsx": "react-jsx",
     "paths": {
+      "@shared": ["./src/shared/index.ts"],
       "@shared/*": ["./src/shared/*"]
     },
     "baseUrl": "."

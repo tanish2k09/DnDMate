@@ -1,5 +1,5 @@
-import { describe, expect, test } from "bun:test";
-import type { GameState } from "@dndmate/shared";
+import type { GameState } from "@shared";
+import { describe, expect, test } from "vitest";
 import { colorsEqual, type Framebuffer } from "../render";
 import { hourglassScene } from "./hourglass-scene";
 import { SAND, SAND_LOW } from "./palette";

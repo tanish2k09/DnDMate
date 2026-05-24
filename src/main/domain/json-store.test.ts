@@ -1,7 +1,7 @@
-import { afterEach, describe, expect, test } from "bun:test";
-import { rm } from "node:fs/promises";
+import { rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { afterEach, describe, expect, test } from "vitest";
 import { readJson, writeJson } from "./json-store";
 
 describe("json-store", () => {
@@ -25,7 +25,7 @@ describe("json-store", () => {
   });
 
   test("returns the fallback when the file is invalid JSON", async () => {
-    await Bun.write(path, "{ not json");
+    await writeFile(path, "{ not json");
     expect(await readJson(path, "fallback")).toBe("fallback");
   });
 });

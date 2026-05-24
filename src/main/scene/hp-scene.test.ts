@@ -1,5 +1,5 @@
-import { describe, expect, test } from "bun:test";
-import type { Combatant, GameState } from "@dndmate/shared";
+import type { Combatant, GameState } from "@shared";
+import { describe, expect, test } from "vitest";
 import type { Framebuffer } from "../render";
 import { partyHpScene } from "./hp-scene";
 import type { SceneContext } from "./scene";

@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from "vitest";
 import { buildFont, glyphPixel, parseGlyph } from "./bitmap-font";
 import { FONT_3X5 } from "./fonts/font-3x5";
 import { FONT_5X7 } from "./fonts/font-5x7";

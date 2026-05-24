@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from "vitest";
 import { BLUE, RED } from "./color";
 import { Framebuffer } from "./framebuffer";
 import { decodePicData, encodeFrame, encodeFrames } from "./rgb-encoder";

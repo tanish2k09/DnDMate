@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from "vitest";
 import { BLACK, WHITE } from "./color";
 import { FONT_3X5 } from "./fonts/font-3x5";
 import { Framebuffer } from "./framebuffer";

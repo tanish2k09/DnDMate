@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import { type Combatant, type DeviceSettings, isSceneId, type SceneId } from "@dndmate/shared";
+import { type Combatant, type DeviceSettings, isSceneId, type SceneId } from "@shared";
 import { readJson, writeJson } from "./json-store";
 
 /** The portion of game state that survives a server restart. */
@@ -15,8 +15,12 @@ export interface StatePersister {
   save(state: PersistedState): Promise<void>;
 }
 
-/** Project-root `data/` directory (stable regardless of the process cwd). */
-const DATA_DIR = join(import.meta.dir, "../../../../data");
+/**
+ * Project-root `data/` directory (stable regardless of the process cwd).
+ * Used as a development fallback; Electron's main entry overrides this with
+ * `app.getPath('userData')` once packaged.
+ */
+const DATA_DIR = join(import.meta.dirname, "../../../../data");
 const STATE_FILE = join(DATA_DIR, "dndmate.json");
 
 /** A fresh default state for first run. */

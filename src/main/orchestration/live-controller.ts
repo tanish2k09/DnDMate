@@ -1,8 +1,8 @@
-import type { DeviceSettings } from "@dndmate/shared";
+import type { DeviceSettings } from "@shared";
 import type { GameStore } from "../domain/game-store";
 import type { Framebuffer } from "../render";
 import { renderScene } from "../scene";
-import { profileForModel } from "../transport/device-profile";
+import { profileForModel } from "./device-profile";
 import { PushScheduler } from "./push-scheduler";
 
 /** A destination for rendered frames — the real device, or a test double. */

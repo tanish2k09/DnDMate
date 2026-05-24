@@ -1,5 +1,5 @@
-import { describe, expect, test } from "bun:test";
-import type { GameState, SceneId } from "@dndmate/shared";
+import type { GameState, SceneId } from "@shared";
+import { describe, expect, test } from "vitest";
 import type { Framebuffer } from "../render";
 import { getScene, renderScene } from "./registry";
 import type { SceneContext } from "./scene";

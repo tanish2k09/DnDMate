@@ -1,4 +1,4 @@
-import type { TimerSnapshot } from "@dndmate/shared";
+import type { TimerSnapshot } from "@shared";
 
 const DEFAULT_DURATION_SECONDS = 60;
 
