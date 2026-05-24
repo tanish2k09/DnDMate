@@ -1,8 +1,10 @@
 import { describe, expect, test } from "vitest";
+import { Framebuffer } from "../../render";
 import {
   animationFrame,
   CHANNEL,
   COMMAND,
+  encodePaletteFrame,
   setBrightness,
   setChannel,
   setStaticImage,
@@ -59,35 +61,97 @@ describe("setChannel", () => {
   });
 });
 
+describe("encodePaletteFrame", () => {
+  test("dedupes colors into the palette and bit-packs indices", () => {
+    // 2x2 framebuffer with 2 unique colors → 1 bit per pixel
+    const fb = new Framebuffer(2, 2);
+    fb.set(0, 0, { r: 0xff, g: 0x00, b: 0x00 }); // index 0
+    fb.set(1, 0, { r: 0x00, g: 0xff, b: 0x00 }); // index 1
+    fb.set(0, 1, { r: 0x00, g: 0xff, b: 0x00 }); // index 1
+    fb.set(1, 1, { r: 0xff, g: 0x00, b: 0x00 }); // index 0
+    const { paletteCount, palette, screen } = encodePaletteFrame(fb);
+    expect(paletteCount).toBe(2);
+    expect(Array.from(palette)).toEqual([0xff, 0x00, 0x00, 0x00, 0xff, 0x00]);
+    // indices = [0, 1, 1, 0] packed LE at 1 bit each → 0b0110 = 0x06
+    expect(Array.from(screen)).toEqual([0x06]);
+  });
+
+  test("uses 1 bit per pixel even when there is only one color", () => {
+    const fb = new Framebuffer(4, 1);
+    fb.fill({ r: 0x10, g: 0x20, b: 0x30 });
+    const { paletteCount, palette, screen } = encodePaletteFrame(fb);
+    expect(paletteCount).toBe(1);
+    expect(Array.from(palette)).toEqual([0x10, 0x20, 0x30]);
+    // 4 pixels × 1 bit = 4 bits → 1 byte, all zeros
+    expect(Array.from(screen)).toEqual([0x00]);
+  });
+
+  test("rejects images with more than 1024 unique colors", () => {
+    // 64x17 = 1088 pixels, each given a unique (r, g, b) → blows past the 1024 cap.
+    const fb = new Framebuffer(64, 17);
+    for (let i = 0; i < 64 * 17; i++) {
+      const x = i % 64;
+      const y = Math.floor(i / 64);
+      fb.set(x, y, { r: i & 0xff, g: (i >> 8) & 0xff, b: (i >> 16) & 0xff });
+    }
+    expect(() => encodePaletteFrame(fb)).toThrow(/palette overflow/);
+  });
+});
+
 describe("setStaticImage", () => {
-  test("emits a header + raw RGB bytes that round-trip through decode", () => {
-    // Tiny synthetic image: 2x1 pixels = 6 RGB bytes.
-    const rgb = new Uint8Array([0xff, 0x00, 0x00, 0x00, 0xff, 0x00]);
-    const frame = setStaticImage(rgb);
+  test("emits the canonical Pixoo Max header + palette + screen layout", () => {
+    // 2x1 framebuffer, two distinct colors
+    const fb = new Framebuffer(2, 1);
+    fb.set(0, 0, { r: 0xff, g: 0x00, b: 0x00 });
+    fb.set(1, 0, { r: 0x00, g: 0xff, b: 0x00 });
+    const frame = setStaticImage(fb);
     const decoded = decodeFrame(frame);
     expect(decoded.ok).toBe(true);
     if (!decoded.ok) return;
 
-    // Command byte
+    // [0x44] [0x00 0x0a 0x0a 0x04] [0xAA] [frameSize_lo frameSize_hi]
+    //   [0x00 0x00] [0x03] [paletteCount_lo paletteCount_hi] [palette] [screen]
     expect(decoded.payload[0]).toBe(COMMAND.SET_STATIC_IMAGE);
-    // Size header: rgb.length + 7 (tail) + 2 (palette size) = 15
-    expect(decoded.payload[1]).toBe(15);
-    expect(decoded.payload[2]).toBe(0);
-    // 7 zero bytes
-    for (let i = 3; i < 10; i++) expect(decoded.payload[i]).toBe(0);
-    // 2-byte palette size = 0
-    expect(decoded.payload[10]).toBe(0);
-    expect(decoded.payload[11]).toBe(0);
-    // RGB pixels begin at offset 12
-    expect(Array.from(decoded.payload.slice(12))).toEqual(Array.from(rgb));
+    expect(Array.from(decoded.payload.slice(1, 5))).toEqual([0x00, 0x0a, 0x0a, 0x04]);
+    expect(decoded.payload[5]).toBe(0xaa);
+
+    // frameSize = self(2) + frameTime(2) + paletteType(1) + paletteCount(2)
+    //           + palette(6) + screen(1) = 14
+    expect(decoded.payload[6]).toBe(14);
+    expect(decoded.payload[7]).toBe(0);
+    expect(decoded.payload[8]).toBe(0); // frameTime lo
+    expect(decoded.payload[9]).toBe(0); // frameTime hi
+    expect(decoded.payload[10]).toBe(0x03); // paletteType
+    expect(decoded.payload[11]).toBe(2); // paletteCount lo
+    expect(decoded.payload[12]).toBe(0); // paletteCount hi
+    expect(Array.from(decoded.payload.slice(13, 19))).toEqual([
+      0xff, 0x00, 0x00, 0x00, 0xff, 0x00,
+    ]);
+    // screen: indices [0, 1] at 1 bit each LE → 0b10 = 0x02
+    expect(decoded.payload[19]).toBe(0x02);
   });
 
-  test("handles a full 32x32 frame (3072 RGB bytes)", () => {
-    const rgb = new Uint8Array(32 * 32 * 3);
-    for (let i = 0; i < rgb.length; i++) rgb[i] = i & 0xff;
-    const frame = setStaticImage(rgb);
-    expect(frame.length).toBe(rgb.length + 12 + 6); // header(12) + envelope(6)
-    expect(decodeFrame(frame).ok).toBe(true);
+  test("handles a full 32x32 frame within the palette limit", () => {
+    const fb = new Framebuffer(32, 32);
+    // 4 unique colors → 2 bits per pixel → screen = 1024*2/8 = 256 bytes
+    const colors = [
+      { r: 0xff, g: 0x00, b: 0x00 },
+      { r: 0x00, g: 0xff, b: 0x00 },
+      { r: 0x00, g: 0x00, b: 0xff },
+      { r: 0xff, g: 0xff, b: 0xff },
+    ];
+    for (let y = 0; y < 32; y++) {
+      for (let x = 0; x < 32; x++) {
+        fb.set(x, y, colors[(x + y) % 4]);
+      }
+    }
+    const frame = setStaticImage(fb);
+    const decoded = decodeFrame(frame);
+    expect(decoded.ok).toBe(true);
+    if (!decoded.ok) return;
+    // header(13) + palette(12) + screen(256) = 281 bytes payload
+    expect(decoded.payload.length).toBe(13 + 12 + 256);
+    expect(decoded.payload[11]).toBe(4); // paletteCount = 4
   });
 });
 

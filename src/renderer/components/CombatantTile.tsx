@@ -1,20 +1,31 @@
 import type { Combatant } from "../../shared";
 import { useApp } from "../store/app-context";
-import { HpBar } from "./HpBar";
+import { ClassBadge } from "./ClassBadge";
+import { HpSlider } from "./HpSlider";
 import { HpStepper } from "./HpStepper";
 
-/** One combatant: name, HP readout, HP bar, and damage/heal controls. */
+/** One combatant: class badge, name, HP slider, and damage/heal controls. */
 export function CombatantTile({ combatant }: { combatant: Combatant }) {
   const { actions } = useApp();
 
+  // adjust composes on top of the *current* (draft) value the row is rendering
+  // with — so clicking -5 then +1 lands at -4 in the queue, not +1 vs. live.
   const adjust = (delta: number) => {
     const next = Math.max(0, Math.min(combatant.maxHp, combatant.currentHp + delta));
     actions.adjustHp(combatant.id, next);
   };
 
+  const setHp = (value: number) => {
+    actions.adjustHp(combatant.id, Math.max(0, Math.min(combatant.maxHp, value)));
+  };
+
   return (
     <div className="combatant-tile">
       <div className="combatant-row">
+        <ClassBadge
+          charClass={combatant.charClass}
+          onChange={(charClass) => actions.setCombatantClass(combatant.id, charClass)}
+        />
         <span className="combatant-name">{combatant.name}</span>
         <span className="combatant-hp">
           {combatant.currentHp}
@@ -29,7 +40,7 @@ export function CombatantTile({ combatant }: { combatant: Combatant }) {
           ×
         </button>
       </div>
-      <HpBar currentHp={combatant.currentHp} maxHp={combatant.maxHp} />
+      <HpSlider currentHp={combatant.currentHp} maxHp={combatant.maxHp} onChange={setHp} />
       <HpStepper onAdjust={adjust} />
     </div>
   );

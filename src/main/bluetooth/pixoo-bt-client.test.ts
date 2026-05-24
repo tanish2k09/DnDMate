@@ -86,8 +86,12 @@ describe("PixooBtClient", () => {
     expect(decoded.ok).toBe(true);
     if (!decoded.ok) return;
     expect(decoded.payload[0]).toBe(COMMAND.SET_STATIC_IMAGE);
-    // Pixel data sits at offset 12: command(1) + size(2) + tail(7) + palette_size(2).
-    expect(Array.from(decoded.payload.slice(12, 15))).toEqual([0x77, 0x77, 0x77]);
+    // Palette mode header: cmd(1) + prefix(4) + 0xAA(1) + frameSize(2) +
+    // frameTime(2) + paletteType(1) + paletteCount(2) = 13 bytes.
+    // Solid-color frame → 1 palette entry [0x77, 0x77, 0x77] at offset 13.
+    expect(decoded.payload[10]).toBe(0x03); // paletteType
+    expect(decoded.payload[11]).toBe(1); // paletteCount = 1
+    expect(Array.from(decoded.payload.slice(13, 16))).toEqual([0x77, 0x77, 0x77]);
   });
 
   test("coalesces frames that arrive while a send is in flight", async () => {
@@ -110,7 +114,8 @@ describe("PixooBtClient", () => {
     expect(transport.sent.length).toBeLessThanOrEqual(3);
     const last = decodeFrame(transport.sent[transport.sent.length - 1]);
     if (!last.ok) throw new Error("decode failed");
-    expect(Array.from(last.payload.slice(12, 15))).toEqual([0x33, 0x33, 0x33]);
+    // 1x1 solid 0x33 frame → palette = [0x33, 0x33, 0x33] at offset 13.
+    expect(Array.from(last.payload.slice(13, 16))).toEqual([0x33, 0x33, 0x33]);
   });
 
   test("only re-sends brightness when the value moves", async () => {
@@ -142,14 +147,21 @@ describe("PixooBtClient", () => {
       },
       noopPersister,
     );
-    const controller = new LiveController({ store, device: client, onFrame: () => {} });
+    const controller = new LiveController({
+      store,
+      device: client,
+      onDraftFrame: () => {},
+      onLiveFrame: () => {},
+      onPendingChange: () => {},
+      onDraftState: () => {},
+    });
     controller.start();
     await tick();
     await tick();
     await tick();
 
     // We expect: SET_CHANNEL (after connect) + SET_BRIGHTNESS + at least one
-    // SET_STATIC_IMAGE for the initial render.
+    // SET_STATIC_IMAGE for the initial render (LiveController auto-commits).
     const commands = commandsOf(transport);
     expect(commands).toContain(COMMAND.SET_CHANNEL);
     expect(commands).toContain(COMMAND.SET_BRIGHTNESS);

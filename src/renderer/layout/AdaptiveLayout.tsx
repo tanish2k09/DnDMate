@@ -1,48 +1,76 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { APP_NAME } from "../../shared";
 import { DeviceStatusBadge } from "../components/DeviceStatusBadge";
 import { PreviewPanel } from "../panels/PreviewPanel";
-import { RosterPanel } from "../panels/RosterPanel";
 import { SetupPanel } from "../panels/SetupPanel";
 import { useFormFactor } from "./useFormFactor";
 
-type Tab = "roster" | "live" | "setup";
+type Tab = "live" | "setup";
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: "roster", label: "Roster" },
   { id: "live", label: "Live" },
   { id: "setup", label: "Setup" },
 ];
 
-/** Switches between the phone (tabbed) and desktop (three-column) layouts. */
+const SETUP_OPEN_KEY = "dndmate:setup-open";
+
+/** Switches between the phone (tabbed) and desktop (collapsible-sidebar) layouts. */
 export function AdaptiveLayout() {
   const formFactor = useFormFactor();
   return formFactor === "expanded" ? <ExpandedLayout /> : <CompactLayout />;
 }
 
-function Header() {
+function Header({ children }: { children?: React.ReactNode }) {
   return (
     <header className="app-header">
       <h1>{APP_NAME}</h1>
-      <DeviceStatusBadge />
+      <div className="app-header-actions">
+        <DeviceStatusBadge />
+        {children}
+      </div>
     </header>
   );
 }
 
 function ExpandedLayout() {
+  const [setupOpen, setSetupOpen] = useState(() => {
+    try {
+      return window.localStorage.getItem(SETUP_OPEN_KEY) !== "0";
+    } catch {
+      return true;
+    }
+  });
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(SETUP_OPEN_KEY, setupOpen ? "1" : "0");
+    } catch {
+      /* localStorage unavailable; just live with it */
+    }
+  }, [setupOpen]);
+
   return (
     <div className="layout layout-expanded">
-      <Header />
+      <Header>
+        <button
+          type="button"
+          className={`button button-icon ${setupOpen ? "button-icon-active" : ""}`}
+          aria-pressed={setupOpen}
+          aria-label={setupOpen ? "Hide setup sidebar" : "Show setup sidebar"}
+          title={setupOpen ? "Hide setup" : "Show setup"}
+          onClick={() => setSetupOpen((v) => !v)}
+        >
+          {setupOpen ? "Hide setup ▸" : "◂ Setup"}
+        </button>
+      </Header>
       <div className="columns">
-        <div className="column">
-          <RosterPanel />
-        </div>
         <div className="column column-center">
           <PreviewPanel />
         </div>
-        <div className="column">
-          <SetupPanel />
-        </div>
+        {setupOpen && (
+          <div className="column column-sidebar">
+            <SetupPanel />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -55,7 +83,6 @@ function CompactLayout() {
     <div className="layout layout-compact">
       <Header />
       <main className="compact-main">
-        {tab === "roster" && <RosterPanel />}
         {tab === "live" && <PreviewPanel />}
         {tab === "setup" && <SetupPanel />}
       </main>

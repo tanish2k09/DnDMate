@@ -4,6 +4,7 @@ import { app, BrowserWindow } from "electron";
 import { PixooBtClient } from "./bluetooth/pixoo-bt-client";
 import { createBtTransport } from "./bluetooth/transport-factory";
 import { GameStore } from "./domain/game-store";
+import { SnapshotRepository } from "./domain/snapshot-repository";
 import { StateRepository } from "./domain/state-repository";
 import { IpcBridge } from "./ipc-bridge";
 import { LiveController } from "./orchestration/live-controller";
@@ -18,7 +19,9 @@ interface AppContext {
 }
 
 async function bootstrap(): Promise<AppContext> {
-  const repository = new StateRepository(join(app.getPath("userData"), "dndmate.json"));
+  const userData = app.getPath("userData");
+  const repository = new StateRepository(join(userData, "dndmate.json"));
+  const snapshots = new SnapshotRepository(join(userData, "snapshots"));
   const initial = await repository.load();
   const store = new GameStore(initial, repository);
 
@@ -31,13 +34,17 @@ async function bootstrap(): Promise<AppContext> {
     device.markUnavailable("Bluetooth is only supported on macOS in this build");
   }
 
-  const bridge = new IpcBridge({ store, device });
+  const bridge = new IpcBridge({ store, device, snapshots });
 
   const controller = new LiveController({
     store,
     device,
-    onFrame: (frame) => bridge.publishFrame(frame),
+    onDraftFrame: (frame) => bridge.publishDraftFrame(frame),
+    onLiveFrame: (frame) => bridge.publishLiveFrame(frame),
+    onPendingChange: (count) => bridge.publishPending(count),
+    onDraftState: (state) => bridge.publishDraftState(state),
   });
+  bridge.attachController(controller);
   controller.start();
 
   return { store, controller, bridge, device };

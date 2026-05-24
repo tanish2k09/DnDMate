@@ -8,18 +8,24 @@ const SCENES: { id: SceneId; label: string }[] = [
   { id: "blank", label: "Off" },
 ];
 
-/** Choose which scene drives the display. */
+/**
+ * Scene tabs — clicking a tab navigates to that scene. Navigation discards any
+ * pending draft frames (server-side, in {@link IpcChannel.SetScene}) so the
+ * preview pair stays consistent with the scene the user just selected.
+ */
 export function ScenePicker() {
   const { state, actions } = useApp();
   const active = state?.activeScene;
 
   return (
-    <div className="scene-picker">
+    <div className="scene-tabs" role="tablist">
       {SCENES.map((scene) => (
         <button
           key={scene.id}
           type="button"
-          className={`scene-button ${active === scene.id ? "scene-button-active" : ""}`}
+          role="tab"
+          aria-selected={active === scene.id}
+          className={`scene-tab ${active === scene.id ? "scene-tab-active" : ""}`}
           onClick={() => actions.setScene(scene.id)}
         >
           {scene.label}

@@ -2,7 +2,13 @@ import type { BtConnectionStatus, BtStatusMessage, DeviceSettings } from "../../
 import type { DeviceSink } from "../orchestration/live-controller";
 import type { Framebuffer } from "../render";
 import type { BtTransport } from "./bt-transport";
-import { CHANNEL, setBrightness, setChannel, setStaticImage } from "./protocol/commands";
+import {
+  CHANNEL,
+  encodePaletteFrame,
+  setBrightness,
+  setChannel,
+  setStaticImage,
+} from "./protocol/commands";
 
 type StatusListener = (status: BtStatusMessage) => void;
 
@@ -82,6 +88,80 @@ export class PixooBtClient implements DeviceSink {
     void this.drain();
   }
 
+  /**
+   * Push every frame sequentially, awaiting each transport.send, and return
+   * per-frame timings. Bypasses coalescing — used by the benchmark UI to
+   * measure real-world frame throughput against the device.
+   */
+  async benchmark(
+    frames: readonly Framebuffer[],
+    options: { minIntervalMs?: number; bytesPerSec?: number } = {},
+  ): Promise<{
+    samples: Array<{ paletteCount: number; payloadBytes: number; ms: number }>;
+    error: string | null;
+  }> {
+    if (this.transport.state !== "connected") {
+      return { samples: [], error: "not connected" };
+    }
+    const minIntervalMs = options.minIntervalMs ?? 0;
+    const bytesPerSec = options.bytesPerSec ?? 0;
+    const samples: Array<{ paletteCount: number; payloadBytes: number; ms: number }> = [];
+    for (const frame of frames) {
+      const { paletteCount } = encodePaletteFrame(frame);
+      const bytes = setStaticImage(frame);
+      const startedAt = performance.now();
+      try {
+        await this.transport.send(bytes);
+      } catch (error) {
+        // Keep the samples we already collected so the UI can show how far we
+        // got before the device dropped the link.
+        return {
+          samples,
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
+      const sendMs = performance.now() - startedAt;
+      samples.push({ paletteCount, payloadBytes: bytes.length, ms: sendMs });
+      // Pace from frame-start to frame-start. Large frames need more time to
+      // decode on the device, so we honor the larger of (a) the frame-rate cap
+      // and (b) a byte-rate cap that scales with payload size.
+      const byteBudgetMs = bytesPerSec > 0 ? (bytes.length / bytesPerSec) * 1000 : 0;
+      const targetMs = Math.max(minIntervalMs, byteBudgetMs);
+      const remaining = targetMs - sendMs;
+      if (remaining > 0) {
+        await new Promise<void>((resolve) => setTimeout(resolve, remaining));
+      }
+    }
+    return { samples, error: null };
+  }
+
+  /**
+   * Re-attempt the BT connection with the currently bound address. No-op when
+   * no device is bound or BT is unavailable. Used by the UI's "Reconnect"
+   * button to recover from a device that dropped (e.g., timed out, slept).
+   */
+  reconnect(): void {
+    this.reconciling = this.reconciling
+      .then(async () => {
+        const address = this.currentAddress;
+        if (!address || this.status.status === "unavailable") return;
+        if (this.transport.state !== "disconnected") {
+          try {
+            await this.transport.disconnect();
+          } catch {
+            // about to reconnect — ignore teardown errors
+          }
+        }
+        this.currentAddress = null;
+        this.currentBrightness = null;
+        await this.reconcileAddress(address);
+      })
+      .then(() => this.drain())
+      .catch((error) => {
+        console.warn("PixooBtClient.reconnect failed:", error);
+      });
+  }
+
   /** Disconnect cleanly; safe to call multiple times. */
   async dispose(): Promise<void> {
     try {
@@ -137,7 +217,7 @@ export class PixooBtClient implements DeviceSink {
         const frame = this.pendingFrame;
         this.pendingFrame = null;
         try {
-          await this.transport.send(setStaticImage(frame.data));
+          await this.transport.send(setStaticImage(frame));
         } catch (error) {
           console.warn("PixooBtClient.push failed:", error);
           return; // bail; reconciler will recover on next settings change

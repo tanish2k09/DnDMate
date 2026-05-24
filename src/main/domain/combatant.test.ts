@@ -18,7 +18,11 @@ describe("createCombatant", () => {
 
 describe("clampHp", () => {
   test("clamps currentHp into [0, maxHp]", () => {
-    expect(clampHp({ id: "x", name: "n", currentHp: 99, maxHp: 30 }).currentHp).toBe(30);
-    expect(clampHp({ id: "x", name: "n", currentHp: -5, maxHp: 30 }).currentHp).toBe(0);
+    expect(
+      clampHp({ id: "x", name: "n", currentHp: 99, maxHp: 30, charClass: "other" }).currentHp,
+    ).toBe(30);
+    expect(
+      clampHp({ id: "x", name: "n", currentHp: -5, maxHp: 30, charClass: "other" }).currentHp,
+    ).toBe(0);
   });
 });

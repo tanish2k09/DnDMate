@@ -76,8 +76,15 @@ export class RfcommTransport implements BtTransport {
       () =>
         new Promise<void>((resolve, reject) => {
           serial.write(buffer, (error) => {
-            if (error) reject(error);
-            else resolve();
+            if (error) {
+              console.warn(
+                `RfcommTransport: write failed after ${buffer.length} byte frame:`,
+                error,
+              );
+              reject(error);
+            } else {
+              resolve();
+            }
           });
         }),
     );

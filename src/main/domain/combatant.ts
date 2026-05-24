@@ -1,14 +1,19 @@
-import type { Combatant } from "../../shared";
+import type { Combatant, CombatantClass } from "../../shared";
 import { generateId } from "./ids";
 
 /** Create a new combatant at full health. `maxHp` is forced to at least 1. */
-export function createCombatant(name: string, maxHp: number): Combatant {
+export function createCombatant(
+  name: string,
+  maxHp: number,
+  charClass: CombatantClass = "other",
+): Combatant {
   const hp = Math.max(1, Math.round(maxHp) || 1);
   return {
     id: generateId(),
     name: name.trim() || "Unnamed",
     currentHp: hp,
     maxHp: hp,
+    charClass,
   };
 }
 

@@ -9,7 +9,9 @@ import {
 
 interface AppContextValue {
   status: ConnectionStatus;
-  preview: PreviewMessage | null;
+  draftPreview: PreviewMessage | null;
+  livePreview: PreviewMessage | null;
+  pendingCount: number;
   state: GameState | null;
   bt: BtStatusMessage;
   actions: IpcClient;

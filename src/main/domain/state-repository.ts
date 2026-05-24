@@ -1,5 +1,11 @@
 import { join } from "node:path";
-import { type Combatant, type DeviceSettings, isSceneId, type SceneId } from "../../shared";
+import {
+  type Combatant,
+  type DeviceSettings,
+  isCombatantClass,
+  isSceneId,
+  type SceneId,
+} from "../../shared";
 import { readJson, writeJson } from "./json-store";
 
 /** The portion of game state that survives a server restart. */
@@ -38,7 +44,7 @@ export class StateRepository implements StatePersister {
   constructor(private readonly file: string = STATE_FILE) {}
 
   async load(): Promise<PersistedState> {
-    return normalize(await readJson<unknown>(this.file, null));
+    return normalizePersistedState(await readJson<unknown>(this.file, null));
   }
 
   async save(state: PersistedState): Promise<void> {
@@ -47,7 +53,7 @@ export class StateRepository implements StatePersister {
 }
 
 /** Coerce arbitrary parsed JSON into a valid {@link PersistedState}. */
-function normalize(raw: unknown): PersistedState {
+export function normalizePersistedState(raw: unknown): PersistedState {
   const fallback = defaultState();
   if (typeof raw !== "object" || raw === null) {
     return fallback;
@@ -59,8 +65,8 @@ function normalize(raw: unknown): PersistedState {
       : {};
 
   return {
-    party: Array.isArray(state.party) ? state.party : [],
-    enemies: Array.isArray(state.enemies) ? state.enemies : [],
+    party: Array.isArray(state.party) ? state.party.map(normalizeCombatant) : [],
+    enemies: Array.isArray(state.enemies) ? state.enemies.map(normalizeCombatant) : [],
     device: {
       host: typeof device.host === "string" ? device.host : null,
       brightness:
@@ -70,5 +76,16 @@ function normalize(raw: unknown): PersistedState {
       model: device.model === "pixoo-64" ? "pixoo-64" : "pixoo-max",
     },
     activeScene: isSceneId(state.activeScene) ? state.activeScene : fallback.activeScene,
+  };
+}
+
+function normalizeCombatant(raw: unknown): Combatant {
+  const c = (raw ?? {}) as Partial<Combatant>;
+  return {
+    id: typeof c.id === "string" ? c.id : "",
+    name: typeof c.name === "string" ? c.name : "Unnamed",
+    currentHp: typeof c.currentHp === "number" ? c.currentHp : 0,
+    maxHp: typeof c.maxHp === "number" ? c.maxHp : 1,
+    charClass: isCombatantClass(c.charClass) ? c.charClass : "other",
   };
 }

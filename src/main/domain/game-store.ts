@@ -1,6 +1,14 @@
-import type { Combatant, CombatantGroup, DeviceSettings, GameState, SceneId } from "../../shared";
+import type {
+  Combatant,
+  CombatantClass,
+  CombatantGroup,
+  DeviceSettings,
+  GameState,
+  SceneId,
+} from "../../shared";
 import { clampHp, createCombatant } from "./combatant";
 import { CountdownTimer } from "./countdown-timer";
+import { applyMutation as applyMutationPure, type Mutation } from "./mutations";
 import type { PersistedState, StatePersister } from "./state-repository";
 
 /** Debounce window for writing state changes to disk. */
@@ -48,8 +56,13 @@ export class GameStore {
 
   // --- roster --------------------------------------------------------------
 
-  addCombatant(group: CombatantGroup, name: string, maxHp: number): Combatant {
-    const combatant = createCombatant(name, maxHp);
+  addCombatant(
+    group: CombatantGroup,
+    name: string,
+    maxHp: number,
+    charClass: CombatantClass = "other",
+  ): Combatant {
+    const combatant = createCombatant(name, maxHp, charClass);
     this.listFor(group).push(combatant);
     this.emitChange();
     return combatant;
@@ -91,6 +104,34 @@ export class GameStore {
 
   setActiveScene(scene: SceneId): void {
     this.activeScene = scene;
+    this.emitChange();
+  }
+
+  /**
+   * Atomically swap in a fresh persisted state — used by the load-snapshot
+   * flow. Resets the live timer so a loaded save doesn't appear to be in the
+   * middle of a countdown that started on a different host.
+   */
+  replaceState(next: PersistedState): void {
+    this.party = next.party.map((c) => ({ ...c }));
+    this.enemies = next.enemies.map((c) => ({ ...c }));
+    this.device = { ...next.device };
+    this.activeScene = next.activeScene;
+    this.timer.reset();
+    this.emitChange();
+  }
+
+  /**
+   * Apply a {@link Mutation} by reducing it through the pure mutation
+   * function and assigning the result back. Used by the commit playback in
+   * {@link LiveController} to convert queued actions into committed state.
+   */
+  applyMutation(mutation: Mutation): void {
+    const next = applyMutationPure(this.persisted(), mutation);
+    this.party = next.party;
+    this.enemies = next.enemies;
+    this.device = next.device;
+    this.activeScene = next.activeScene;
     this.emitChange();
   }
 
