@@ -10,7 +10,7 @@
     "dev:mock": "cross-env DNDMATE_FORCE_MOCK_BT=1 electron-vite dev",
     "build": "electron-vite build",
     "preview": "electron-vite preview",
-    "package": "electron-vite build && electron-builder",
+    "package": "electron-vite build && electron-builder --mac",
     "postinstall": "electron-builder install-app-deps",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -43,15 +43,45 @@
     "appId": "com.dndmate.app",
     "productName": "DnDMate",
     "directories": {
-      "output": "release"
+      "output": "release",
+      "buildResources": "build"
     },
     "files": [
       "out/**/*",
-      "package.json"
+      "package.json",
+      "!**/{.DS_Store,Thumbs.db,*.map}"
+    ],
+    "asar": true,
+    "asarUnpack": [
+      "**/node_modules/node-bluetooth-serial-port/**/*",
+      "**/node_modules/bindings/**/*",
+      "**/node_modules/nan/**/*"
     ],
     "mac": {
       "category": "public.app-category.entertainment",
-      "target": "dmg"
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["arm64", "x64"]
+        }
+      ],
+      "extendInfo": {
+        "NSBluetoothAlwaysUsageDescription": "DnDMate uses Bluetooth to send live tabletop visuals to your Divoom Pixoo Max.",
+        "NSBluetoothPeripheralUsageDescription": "DnDMate uses Bluetooth to send live tabletop visuals to your Divoom Pixoo Max.",
+        "LSMinimumSystemVersion": "11.0"
+      },
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
+      "identity": null
+    },
+    "dmg": {
+      "title": "DnDMate ${version}",
+      "icon": "build/icon.icns",
+      "iconSize": 96,
+      "window": {
+        "width": 540,
+        "height": 360
+      }
     }
   }
 }
