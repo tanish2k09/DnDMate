@@ -1,10 +1,11 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { app, BrowserWindow } from "electron";
+import { PixooBtClient } from "./bluetooth/pixoo-bt-client";
+import { createBtTransport } from "./bluetooth/transport-factory";
 import { GameStore } from "./domain/game-store";
 import { StateRepository } from "./domain/state-repository";
 import { IpcBridge } from "./ipc-bridge";
-import { NullDeviceConnection } from "./orchestration/device-connection";
 import { LiveController } from "./orchestration/live-controller";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -13,6 +14,7 @@ interface AppContext {
   store: GameStore;
   controller: LiveController;
   bridge: IpcBridge;
+  device: PixooBtClient;
 }
 
 async function bootstrap(): Promise<AppContext> {
@@ -24,14 +26,15 @@ async function bootstrap(): Promise<AppContext> {
   // preview buffer even before any window attaches.
   const bridge = new IpcBridge({ store });
 
+  const device = new PixooBtClient(createBtTransport());
   const controller = new LiveController({
     store,
-    device: new NullDeviceConnection(),
+    device,
     onFrame: (frame) => bridge.publishFrame(frame),
   });
   controller.start();
 
-  return { store, controller, bridge };
+  return { store, controller, bridge, device };
 }
 
 function createWindow(bridge: IpcBridge): BrowserWindow {
@@ -76,6 +79,7 @@ app.whenReady().then(async () => {
   app.on("before-quit", async () => {
     ctx.controller.stop();
     ctx.bridge.dispose();
+    await ctx.device.dispose();
     await ctx.store.flush();
   });
 });
