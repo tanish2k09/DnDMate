@@ -1,24 +1,53 @@
 {
   "name": "dndmate",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
+  "description": "Drive a Divoom Pixoo Max from a MacBook for live D&D tabletop visuals.",
+  "main": "out/main/index.js",
   "type": "module",
-  "workspaces": [
-    "packages/*"
-  ],
   "scripts": {
-    "dev:server": "bun --filter @dndmate/server dev",
-    "dev:web": "bun --filter @dndmate/web dev",
-    "build": "bun --filter @dndmate/web build",
-    "start": "bun --filter @dndmate/server start",
-    "typecheck": "bun --filter '*' typecheck",
-    "test": "bun test",
+    "dev": "electron-vite dev",
+    "dev:mock": "cross-env DNDMATE_FORCE_MOCK_BT=1 electron-vite dev",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
+    "package": "electron-vite build && electron-builder",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
     "lint": "biome check .",
     "format": "biome format --write ."
   },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
   "devDependencies": {
-    "@biomejs/biome": "^2.0.0",
-    "@types/bun": "latest",
-    "typescript": "^5.7.0"
+    "@biomejs/biome": "^2.4.15",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "cross-env": "^7.0.3",
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8",
+    "electron-vite": "^2.3.0",
+    "typescript": "^5.7.0",
+    "vite": "^5.4.0",
+    "vitest": "^2.1.0"
+  },
+  "build": {
+    "appId": "com.dndmate.app",
+    "productName": "DnDMate",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "out/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "category": "public.app-category.entertainment",
+      "target": "dmg"
+    }
   }
 }
