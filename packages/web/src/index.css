@@ -1,0 +1,498 @@
+:root {
+  color-scheme: dark;
+  --bg: #0c0c10;
+  --panel: #16161e;
+  --card: #1e1e28;
+  --card-hover: #25252f;
+  --border: #2c2c3a;
+  --text: #e8e8ee;
+  --muted: #8a8a9c;
+  --accent: #c8443c;
+  --accent-hover: #d65149;
+  --ok: #5dd39e;
+  --warn: #e0a83a;
+  --party: #5b8fd6;
+  --enemy: #d2553b;
+
+  --radius: 10px;
+  --tap: 40px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+h1,
+h2 {
+  margin: 0;
+}
+
+/* ---- Layout ---------------------------------------------------------- */
+
+.layout {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+  flex: 0 0 auto;
+}
+
+.app-header h1 {
+  font-size: 1.25rem;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+}
+
+.columns {
+  flex: 1 1 auto;
+  display: flex;
+  min-height: 0;
+}
+
+.column {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow-y: auto;
+  border-right: 1px solid var(--border);
+}
+
+.column:last-child {
+  border-right: none;
+}
+
+.column-center {
+  flex: 1.15 1 0;
+  background: #0e0e13;
+}
+
+.compact-main {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+/* ---- Tab bar (compact) ---------------------------------------------- */
+
+.tab-bar {
+  display: flex;
+  flex: 0 0 auto;
+  border-top: 1px solid var(--border);
+  background: var(--panel);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.tab {
+  flex: 1;
+  appearance: none;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.85rem 0;
+  cursor: pointer;
+  border-top: 2px solid transparent;
+}
+
+.tab-active {
+  color: var(--text);
+  border-top-color: var(--accent);
+}
+
+/* ---- Panels --------------------------------------------------------- */
+
+.panel {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.section-title .count {
+  font-size: 0.7rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.05rem 0.45rem;
+  color: var(--text);
+}
+
+.empty-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+/* ---- Status badge --------------------------------------------------- */
+
+.status-badge {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.status-open {
+  color: var(--ok);
+  border-color: color-mix(in srgb, var(--ok) 50%, transparent);
+}
+
+.status-connecting {
+  color: var(--warn);
+  border-color: color-mix(in srgb, var(--warn) 50%, transparent);
+}
+
+.status-closed {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+}
+
+/* ---- Roster --------------------------------------------------------- */
+
+.roster-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.combatant-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.combatant-tile {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.combatant-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.combatant-name {
+  flex: 1;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.combatant-hp {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.combatant-hp-max {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.icon-button {
+  appearance: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.icon-button:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* ---- HP bar --------------------------------------------------------- */
+
+.hp-bar {
+  height: 8px;
+  background: #101015;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.hp-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.2s ease;
+}
+
+/* ---- HP stepper ----------------------------------------------------- */
+
+.hp-stepper {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.4rem;
+}
+
+.hp-step {
+  appearance: none;
+  font: inherit;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  min-height: var(--tap);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  background: var(--panel);
+  color: var(--text);
+}
+
+.hp-step-damage {
+  color: #e98b85;
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+}
+
+.hp-step-damage:hover {
+  background: color-mix(in srgb, var(--accent) 22%, var(--panel));
+}
+
+.hp-step-heal {
+  color: #87dcb3;
+  border-color: color-mix(in srgb, var(--ok) 35%, var(--border));
+}
+
+.hp-step-heal:hover {
+  background: color-mix(in srgb, var(--ok) 18%, var(--panel));
+}
+
+/* ---- Buttons & inputs ----------------------------------------------- */
+
+.button {
+  appearance: none;
+  font: inherit;
+  font-size: 0.9rem;
+  min-height: var(--tap);
+  padding: 0.4rem 0.9rem;
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.button:hover {
+  background: var(--card-hover);
+}
+
+.button:active {
+  transform: translateY(1px);
+}
+
+.button-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+.button-primary:hover {
+  background: var(--accent-hover);
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.button-row .button {
+  flex: 1;
+  min-width: 64px;
+}
+
+.text-input,
+.select-input {
+  appearance: none;
+  font: inherit;
+  min-height: var(--tap);
+  padding: 0.4rem 0.6rem;
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+}
+
+.text-input:focus,
+.select-input:focus {
+  outline: 2px solid color-mix(in srgb, var(--accent) 60%, transparent);
+  outline-offset: -1px;
+}
+
+.add-form {
+  display: flex;
+  gap: 0.45rem;
+}
+
+.add-form .text-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.add-form .hp-input {
+  width: 64px;
+  flex: 0 0 auto;
+}
+
+/* ---- Scene picker --------------------------------------------------- */
+
+.scene-picker {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.scene-button {
+  appearance: none;
+  font: inherit;
+  font-weight: 600;
+  min-height: 52px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.scene-button:hover {
+  background: var(--card-hover);
+}
+
+.scene-button-active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 18%, var(--card));
+  color: var(--text);
+}
+
+/* ---- Timer ---------------------------------------------------------- */
+
+.timer-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.timer-display {
+  font-size: 2.6rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+
+.timer-low {
+  color: var(--accent);
+}
+
+/* ---- Preview -------------------------------------------------------- */
+
+.preview-wrap {
+  display: flex;
+  justify-content: center;
+}
+
+.preview-bezel {
+  width: 100%;
+  max-width: 340px;
+  padding: 14px;
+  background: #000;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5);
+}
+
+.pixoo-canvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  image-rendering: pixelated;
+  border-radius: 2px;
+}
+
+/* ---- Setup fields --------------------------------------------------- */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.field-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.field-row {
+  display: flex;
+  gap: 0.45rem;
+}
+
+.field-row .text-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.field-hint {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.range-input {
+  width: 100%;
+  accent-color: var(--accent);
+  height: var(--tap);
+}

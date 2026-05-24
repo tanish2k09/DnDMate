@@ -1,0 +1,14 @@
+{
+  "name": "@dndmate/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch src/main.ts",
+    "start": "bun src/main.ts",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@dndmate/shared": "workspace:*"
+  }
+}
